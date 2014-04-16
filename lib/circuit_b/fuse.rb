@@ -49,6 +49,7 @@ module CircuitB
 
         # Increment the number of failures and open if the limit has been reached
         failures = inc(:failures)
+        RAILS_DEFAULT_LOGGER.debug "Failure detected -- Failures ##{failures} -- Maximum Failures No #{@config[:allowed_failures]} -- #{@config[:allowed_failures].class}"
         open if failures >= @config[:allowed_failures]
 
         # Re-raise the original exception
@@ -75,14 +76,16 @@ module CircuitB
 
     def close_if_cooled_off
       if Time.now.to_i - get(:last_failure_at).to_i > config[:cool_off_period]
+        RAILS_DEFAULT_LOGGER.info "CLOSE: config[:cool_off_period] -- #{config[:cool_off_period]}"
         put(:state, :closed)
         put(:failures, 0)
-        RAILS_DEFAULT_LOGGER.info("Opening fuse #{@name}")
+        RAILS_DEFAULT_LOGGER.info("Closing fuse #{@name} -- #{config[:cool_off_period]}")
       end
     end
 
     # Open the fuse
     def open
+      RAILS_DEFAULT_LOGGER.debug "OPEN"
       put(:state, :open)
 
       if config[:on_break]
